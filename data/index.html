@@ -1,0 +1,86 @@
+<!-- 原理说明：该网页通过轮询 NDJSON 和状态接口展示盆栽环境，并发送 JSON 控制命令给 ESP-01S。 -->
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>智能盆栽控制台</title>
+  <link rel="stylesheet" href="/index.css">
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1>智能盆栽系统通信控制台</h1>
+      <p>实时查看环境数据，向 STM32 下发控制指令。</p>
+    </header>
+
+    <section class="section">
+      <h2>网络状态</h2>
+      <div class="status-grid">
+        <div class="status-item"><span class="label">Wi-Fi</span><span id="wifi-status">加载中...</span></div>
+        <div class="status-item"><span class="label">ESP IP</span><span id="ip-address">加载中...</span></div>
+        <div class="status-item"><span class="label">STM32 报告 IP</span><span id="stm32-ip">加载中...</span></div>
+        <div class="status-item"><span class="label">运行时间</span><span id="uptime">加载中...</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>环境数据</h2>
+      <div class="metric-grid" id="sensor-container">
+        <div class="metric"><span class="metric-label">温度</span><span class="metric-value" id="temp-value">--</span></div>
+        <div class="metric"><span class="metric-label">湿度</span><span class="metric-value" id="humi-value">--</span></div>
+        <div class="metric"><span class="metric-label">土壤湿度</span><span class="metric-value" id="soil-value">--</span></div>
+        <div class="metric"><span class="metric-label">光照</span><span class="metric-value" id="lux-value">--</span></div>
+        <div class="metric"><span class="metric-label">水泵</span><span class="metric-value" id="water-value">--</span></div>
+        <div class="metric"><span class="metric-label">补光灯</span><span class="metric-value" id="light-value">--</span></div>
+        <div class="metric"><span class="metric-label">风扇</span><span class="metric-value" id="fan-value">--</span></div>
+        <div class="metric"><span class="metric-label">数据延迟</span><span class="metric-value" id="data-age">--</span></div>
+      </div>
+      <p class="hint" id="sensor-hint">等待 STM32 上传数据...</p>
+    </section>
+
+    <section class="section">
+      <h2>执行反馈</h2>
+      <div class="ack-card" id="ack-card">
+        <p>尚未收到回执。</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>下发命令</h2>
+      <form id="command-form" class="command-form">
+        <label>
+          控制对象
+          <select id="command-target" required>
+            <option value="water">水泵</option>
+            <option value="light">补光灯</option>
+            <option value="fan">风扇</option>
+          </select>
+        </label>
+        <label>
+          动作
+          <select id="command-action" required>
+            <option value="on">开启</option>
+            <option value="off">关闭</option>
+            <option value="pulse">脉冲</option>
+          </select>
+        </label>
+        <label id="time-wrapper" hidden>
+          脉冲时长 (ms)
+          <input type="number" id="command-time" min="100" max="10000" step="100" value="2000">
+        </label>
+        <button type="submit">发送命令</button>
+      </form>
+      <p class="hint" id="command-hint">命令将通过 ESP 串口转发给 STM32。</p>
+    </section>
+
+    <section class="section">
+      <h2>消息日志</h2>
+      <pre id="message-log" class="message-log"></pre>
+    </section>
+
+    <div class="toast" id="global-error" hidden></div>
+  </div>
+  <script src="/index.js"></script>
+</body>
+</html>
