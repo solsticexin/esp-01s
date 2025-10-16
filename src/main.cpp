@@ -8,7 +8,7 @@
 
 namespace {
 
-constexpr uint32_t kReconnectIntervalMs = 5000;
+constexpr uint32_t kApRetryIntervalMs = 5000;
 unsigned long lastReconnectAttempt = 0;
 bool lastWifiConnected = false;
 IPAddress lastIpReported(0, 0, 0, 0);
@@ -39,12 +39,14 @@ void setup() {
 
   serial_bridge::setMessageHandler(web_server_module::handleSerialLine);
 
-  wifi_manager::connectToNetwork(device_config::WIFI_SSID, device_config::WIFI_PASSWORD);
+  wifi_manager::startAccessPoint(device_config::WIFI_SSID, device_config::WIFI_PASSWORD);
   if (wifi_manager::isConnected()) {
-    Serial.print(F("Wi-Fi 已连接，IP: "));
+    Serial.print(F("Wi-Fi 热点已创建，SSID: "));
+    Serial.println(device_config::WIFI_SSID);
+    Serial.print(F("热点 IP: "));
     Serial.println(wifi_manager::localIP());
   } else {
-    Serial.println(F("Wi-Fi 连接失败或超时，将持续重试。"));
+    Serial.println(F("Wi-Fi 热点创建失败，将持续重试。"));
   }
 
   web_server_module::start(device_config::WEB_SERVER_PORT);
@@ -61,8 +63,8 @@ void loop() {
 
   if (!wifi_manager::isConnected()) {
     const unsigned long now = millis();
-    if (now - lastReconnectAttempt > kReconnectIntervalMs) {
-      wifi_manager::connectToNetwork(device_config::WIFI_SSID, device_config::WIFI_PASSWORD);
+    if (now - lastReconnectAttempt > kApRetryIntervalMs) {
+      wifi_manager::startAccessPoint(device_config::WIFI_SSID, device_config::WIFI_PASSWORD);
       lastReconnectAttempt = now;
     }
   }

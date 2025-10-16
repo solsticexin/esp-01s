@@ -12,6 +12,7 @@ const el = {
   water: document.getElementById('water-value'),
   light: document.getElementById('light-value'),
   fan: document.getElementById('fan-value'),
+  buzzer: document.getElementById('buzzer-value'),
   dataAge: document.getElementById('data-age'),
   ackCard: document.getElementById('ack-card'),
   messageLog: document.getElementById('message-log'),
@@ -22,11 +23,21 @@ const el = {
   timeWrapper: document.getElementById('time-wrapper'),
   commandHint: document.getElementById('command-hint'),
   globalError: document.getElementById('global-error'),
+  thresholdForm: document.getElementById('threshold-form'),
+  thresholdTemp: document.getElementById('threshold-temp'),
+  thresholdHumi: document.getElementById('threshold-humi'),
+  thresholdSoil: document.getElementById('threshold-soil'),
+  thresholdLux: document.getElementById('threshold-lux'),
+  thresholdHint: document.getElementById('threshold-hint'),
+  alarmStatus: document.getElementById('alarm-status'),
 };
 
 let lastMessageId = 0;
 const messageBuffer = [];
 const maxBufferSize = 120;
+const thresholdInputs = [el.thresholdTemp, el.thresholdHumi, el.thresholdSoil, el.thresholdLux].filter(Boolean);
+let thresholdFormDirty = false;
+const thresholdDefaultHint = '留空表示禁用，超限时将触发蜂鸣报警。';
 
 function formatDuration(seconds) {
   if (seconds < 60) {
@@ -48,7 +59,7 @@ function formatDuration(seconds) {
 }
 
 function formatAge(ageMs) {
-  if (Number.isNaN(ageMs)) {
+  if (typeof ageMs !== 'number' || Number.isNaN(ageMs)) {
     return '--';
   }
   if (ageMs < 1000) {
@@ -56,6 +67,19 @@ function formatAge(ageMs) {
   }
   const seconds = Math.floor(ageMs / 1000);
   return `${seconds} 秒前`;
+}
+
+function formatSwitchState(value) {
+  if (value === 1 || value === true) {
+    return '开启';
+  }
+  if (value === 0 || value === false) {
+    return '关闭';
+  }
+  if (typeof value === 'number') {
+    return value > 0 ? '开启' : '关闭';
+  }
+  return '--';
 }
 
 function appendMessageToLog(jsonLine) {
@@ -98,9 +122,10 @@ function updateSensorView(state) {
   el.humi.textContent = `${data.humi?.toFixed?.(1) ?? data.humi ?? '--'} %`;
   el.soil.textContent = `${data.soil ?? '--'} %`;
   el.lux.textContent = `${data.lux?.toFixed?.(1) ?? data.lux ?? '--'} lx`;
-  el.water.textContent = data.water ? '开启' : '关闭';
-  el.light.textContent = data.light ? '开启' : '关闭';
-  el.fan.textContent = data.fan ? '开启' : '关闭';
+  el.water.textContent = formatSwitchState(data.water);
+  el.light.textContent = formatSwitchState(data.light);
+  el.fan.textContent = formatSwitchState(data.fan);
+  el.buzzer.textContent = formatSwitchState(data.buzzer);
   el.dataAge.textContent = formatAge(data.ageMs);
 }
 
@@ -121,6 +146,126 @@ function updateAckView(state) {
   `;
 }
 
+function resetThresholdHint() {
+  if (el.thresholdHint) {
+    el.thresholdHint.textContent = thresholdDefaultHint;
+  }
+}
+
+function updateAlarmView(alarm) {
+  if (!el.alarmStatus) {
+    return;
+  }
+  if (!alarm) {
+    el.alarmStatus.textContent = '暂无报警记录。';
+    return;
+  }
+
+  const parts = [];
+  parts.push(`累计触发 ${alarm.count ?? 0} 次`);
+
+  if (alarm.reason) {
+    parts.push(`最近原因：${alarm.reason}`);
+  }
+
+  if (typeof alarm.ageMs === 'number') {
+    parts.push(`上次触发：${formatAge(alarm.ageMs)}`);
+  }
+
+  if (alarm.cooldownMs) {
+    parts.push(`冷却：${Math.round(alarm.cooldownMs / 1000)} 秒`);
+  }
+
+  if (alarm.pulseMs) {
+    parts.push(`蜂鸣：${alarm.pulseMs} ms`);
+  }
+
+  el.alarmStatus.innerHTML = parts.join('<br>');
+}
+
+function updateThresholdView(state) {
+  if (!el.thresholdForm) {
+    return;
+  }
+
+  const thresholds = state?.thresholds ?? {};
+  const active = document.activeElement;
+  const isEditing = thresholdFormDirty && thresholdInputs.includes(active);
+  if (!isEditing) {
+    const assign = (input, value) => {
+      if (!input) {
+        return;
+      }
+      if (value === null || value === undefined || Number.isNaN(value)) {
+        input.value = '';
+      } else {
+        input.value = value;
+      }
+    };
+
+    assign(el.thresholdTemp, thresholds.temp);
+    assign(el.thresholdHumi, thresholds.humi);
+    assign(el.thresholdSoil, thresholds.soil);
+    assign(el.thresholdLux, thresholds.lux);
+    thresholdFormDirty = false;
+    resetThresholdHint();
+  }
+
+  updateAlarmView(state?.alarm);
+}
+
+function readThresholdInput(input, label) {
+  if (!input) {
+    return null;
+  }
+  const raw = input.value.trim();
+  if (raw === '') {
+    return null;
+  }
+  const numeric = Number(raw);
+  if (Number.isNaN(numeric)) {
+    throw new Error(`${label} 请输入数字`);
+  }
+  return numeric;
+}
+
+async function updateThresholdsOnServer(payload) {
+  const response = await fetch('/api/thresholds', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const msg = await response.text();
+    throw new Error(msg || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+async function handleThresholdSubmit(event) {
+  event.preventDefault();
+  try {
+    const payload = {
+      temp: readThresholdInput(el.thresholdTemp, '温度阈值'),
+      humi: readThresholdInput(el.thresholdHumi, '湿度阈值'),
+      soil: readThresholdInput(el.thresholdSoil, '土壤阈值'),
+      lux: readThresholdInput(el.thresholdLux, '光照阈值'),
+    };
+    const data = await updateThresholdsOnServer(payload);
+    thresholdFormDirty = false;
+    el.thresholdHint.textContent = '阈值已更新并已提交到设备。';
+    setTimeout(resetThresholdHint, 4000);
+    updateThresholdView(data);
+  } catch (error) {
+    showError(`阈值更新失败：${error.message}`);
+  }
+}
+
+function markThresholdDirty() {
+  thresholdFormDirty = true;
+  el.thresholdHint.textContent = '存在未保存的阈值修改。';
+}
+
 async function fetchState() {
   try {
     const response = await fetch('/api/state');
@@ -131,6 +276,7 @@ async function fetchState() {
     updateStatusView(state);
     updateSensorView(state);
     updateAckView(state);
+    updateThresholdView(state);
   } catch (error) {
     showError(`状态刷新失败：${error.message}`);
   }
@@ -211,6 +357,16 @@ function bootstrap() {
   el.commandForm.addEventListener('submit', handleCommandSubmit);
   el.commandAction.addEventListener('change', handleActionChange);
   handleActionChange();
+
+  if (el.thresholdForm) {
+    el.thresholdForm.addEventListener('submit', handleThresholdSubmit);
+    thresholdInputs.forEach((input) => {
+      if (input) {
+        input.addEventListener('input', markThresholdDirty);
+      }
+    });
+    resetThresholdHint();
+  }
 
   fetchState();
   fetchMessages();

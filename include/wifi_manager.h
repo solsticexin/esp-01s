@@ -1,4 +1,4 @@
-// 原理说明：Wi-Fi 管理模块封装连接与状态查询函数，减轻业务逻辑对底层库的耦合。
+// 原理说明：Wi-Fi 管理模块封装热点模式的启停与状态查询，减轻业务逻辑对底层库的耦合。
 #pragma once
 
 #include <Arduino.h>
@@ -6,7 +6,7 @@
 
 namespace wifi_manager {
 
-void connectToNetwork(const char* ssid, const char* password, uint32_t timeoutMs = 15000);
+void startAccessPoint(const char* ssid, const char* password = nullptr);
 bool isConnected();
 IPAddress localIP();
 

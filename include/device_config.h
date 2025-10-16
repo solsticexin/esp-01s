@@ -5,6 +5,7 @@
 
 namespace device_config {
 
+// Access point SSID/password broadcast by the ESP8266 module.
 extern const char WIFI_SSID[];
 extern const char WIFI_PASSWORD[];
 constexpr uint16_t WEB_SERVER_PORT = 80;

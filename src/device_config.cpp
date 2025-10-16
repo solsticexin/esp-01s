@@ -3,8 +3,8 @@
 
 namespace device_config {
 
-// Update these credentials to match the Wi-Fi network you want the device to join.
-const char WIFI_SSID[] = "Redmi Note 13 Pro";
-const char WIFI_PASSWORD[] = "11111111";
+// Configure the credentials for the access point hosted by the ESP module.
+const char WIFI_SSID[] = "ESP01S-Garden";
+const char WIFI_PASSWORD[] = "esp8266ap";
 
 }  // namespace device_config

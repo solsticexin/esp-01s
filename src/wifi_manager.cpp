@@ -1,34 +1,34 @@
-// 原理说明：通过封装 ESP8266WiFi 库的方法，实现非阻塞超时机制的网络连接与状态查询。
+// 原理说明：封装 ESP8266WiFi 接口以启动热点模式并对外提供运行状态。
 #include "wifi_manager.h"
 
 #include <ESP8266WiFi.h>
+#include <cstring>
 
 namespace wifi_manager {
 
-void connectToNetwork(const char* ssid, const char* password, uint32_t timeoutMs) {
-  WiFi.mode(WIFI_STA);
-  if (WiFi.status() == WL_CONNECTED) {
-    return;
-  }
+namespace {
+bool apRunning = false;
+}  // namespace
 
-  WiFi.begin(ssid, password);
+void startAccessPoint(const char* ssid, const char* password) {
+  WiFi.mode(WIFI_AP);
+  WiFi.softAPdisconnect(true);
+  apRunning = false;
 
-  const unsigned long start = millis();
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(100);
-    if (timeoutMs > 0 && (millis() - start) > timeoutMs) {
-      // 超时后立即跳出，让上层逻辑决定下一步动作。
-      break;
-    }
+  if (password != nullptr && password[0] != '\0' && strlen(password) >= 8) {
+    apRunning = WiFi.softAP(ssid, password);
+  } else {
+    // Password shorter than 8 characters disables WPA2 on ESP8266, fall back to open AP.
+    apRunning = WiFi.softAP(ssid);
   }
 }
 
 bool isConnected() {
-  return WiFi.status() == WL_CONNECTED;
+  return apRunning;
 }
 
 IPAddress localIP() {
-  return WiFi.localIP();
+  return WiFi.softAPIP();
 }
 
 }  // namespace wifi_manager

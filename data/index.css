@@ -140,6 +140,53 @@ body {
   background: #2a55b1;
 }
 
+.threshold-form {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin-bottom: 0.75rem;
+}
+
+.threshold-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.threshold-form input {
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #c8d2e5;
+}
+
+.threshold-form button {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 0.55rem 1.1rem;
+  border-radius: 6px;
+  border: none;
+  background: #ff7a45;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.threshold-form button:hover {
+  background: #d85e2c;
+}
+
+.alarm-status {
+  background: #f6f8ff;
+  border: 1px solid rgba(51, 103, 214, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  color: #27427a;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
 .message-log {
   background: #0d1117;
   color: #d8e1f0;
@@ -176,5 +223,14 @@ body {
 
   .command-form button {
     width: 100%;
+  }
+
+  .threshold-form {
+    grid-template-columns: 1fr;
+  }
+
+  .threshold-form button {
+    width: 100%;
+    justify-self: stretch;
   }
 }

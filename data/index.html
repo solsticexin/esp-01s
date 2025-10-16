@@ -34,6 +34,7 @@
         <div class="metric"><span class="metric-label">水泵</span><span class="metric-value" id="water-value">--</span></div>
         <div class="metric"><span class="metric-label">补光灯</span><span class="metric-value" id="light-value">--</span></div>
         <div class="metric"><span class="metric-label">风扇</span><span class="metric-value" id="fan-value">--</span></div>
+        <div class="metric"><span class="metric-label">蜂鸣器</span><span class="metric-value" id="buzzer-value">--</span></div>
         <div class="metric"><span class="metric-label">数据延迟</span><span class="metric-value" id="data-age">--</span></div>
       </div>
       <p class="hint" id="sensor-hint">等待 STM32 上传数据...</p>
@@ -55,6 +56,7 @@
             <option value="water">水泵</option>
             <option value="light">补光灯</option>
             <option value="fan">风扇</option>
+            <option value="buzzer">蜂鸣器</option>
           </select>
         </label>
         <label>
@@ -72,6 +74,31 @@
         <button type="submit">发送命令</button>
       </form>
       <p class="hint" id="command-hint">命令将通过 ESP 串口转发给 STM32。</p>
+    </section>
+
+    <section class="section">
+      <h2>自动报警阈值</h2>
+      <form id="threshold-form" class="threshold-form">
+        <label>
+          环境温度上限 (℃)
+          <input type="number" id="threshold-temp" step="0.1" min="-40" max="125" placeholder="留空禁用">
+        </label>
+        <label>
+          空气湿度上限 (%)
+          <input type="number" id="threshold-humi" step="0.1" min="0" max="100" placeholder="留空禁用">
+        </label>
+        <label>
+          土壤湿度上限 (%)
+          <input type="number" id="threshold-soil" step="1" min="0" max="100" placeholder="留空禁用">
+        </label>
+        <label>
+          光照强度上限 (lx)
+          <input type="number" id="threshold-lux" step="10" min="0" placeholder="留空禁用">
+        </label>
+        <button type="submit">保存阈值</button>
+      </form>
+      <p class="hint" id="threshold-hint">留空表示禁用，超限时将触发蜂鸣器报警。</p>
+      <div class="alarm-status" id="alarm-status">暂无报警记录。</div>
     </section>
 
     <section class="section">
