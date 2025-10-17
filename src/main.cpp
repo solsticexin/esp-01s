@@ -24,7 +24,6 @@ void reportNetworkStatusIfChanged() {
   const bool connected = wifi_manager::isConnected();
   const IPAddress current_ip = currentStatusIp();
   if (connected != lastWifiConnected || current_ip != lastIpReported) {
-    serial_bridge::sendStatusMessage(current_ip);
     lastWifiConnected = connected;
     lastIpReported = current_ip;
   }
@@ -34,23 +33,23 @@ void reportNetworkStatusIfChanged() {
 
 void setup() {
   serial_bridge::begin(Serial, device_config::STM32_SERIAL_BAUD);
-  Serial.println();
-  Serial.println(F("智能盆栽通信终端启动中..."));
+  // Serial.println();
+  // Serial.println(F("智能盆栽通信终端启动中..."));
 
   serial_bridge::setMessageHandler(web_server_module::handleSerialLine);
 
   wifi_manager::startAccessPoint(device_config::WIFI_SSID, device_config::WIFI_PASSWORD);
   if (wifi_manager::isConnected()) {
-    Serial.print(F("Wi-Fi 热点已创建，SSID: "));
-    Serial.println(device_config::WIFI_SSID);
-    Serial.print(F("热点 IP: "));
-    Serial.println(wifi_manager::localIP());
+    // Serial.print(F("Wi-Fi 热点已创建，SSID: "));
+    // Serial.println(device_config::WIFI_SSID);
+    // Serial.print(F("热点 IP: "));
+    // Serial.println(wifi_manager::localIP());
   } else {
-    Serial.println(F("Wi-Fi 热点创建失败，将持续重试。"));
+    // Serial.println(F("Wi-Fi 热点创建失败，将持续重试。"));
   }
 
   web_server_module::start(device_config::WEB_SERVER_PORT);
-  Serial.println(F("Web 服务已启动。"));
+  // Serial.println(F("Web 服务已启动。"));
 
   reportNetworkStatusIfChanged();
 }

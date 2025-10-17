@@ -253,7 +253,7 @@ void checkAndTriggerAlarm(const JsonDocument& doc) {
   String cmdLine;
   serializeJson(cmdDoc, cmdLine);
   if (!serial_bridge::sendJson(cmdDoc)) {
-    Serial.println(F("自动报警命令发送失败"));
+    // Serial.println(F("自动报警命令发送失败"));
     return;
   }
 
@@ -597,7 +597,7 @@ void start(uint16_t port) {
 
   littleFsMounted = LittleFS.begin();
   if (!littleFsMounted) {
-    Serial.println(F("LittleFS 挂载失败，将使用回退页面。"));
+    // Serial.println(F("LittleFS 挂载失败，将使用回退页面。"));
   }
 
   server = new ESP8266WebServer(port);
@@ -635,14 +635,14 @@ void handleSerialLine(const String& line) {
   StaticJsonDocument<256> doc;
   const DeserializationError err = deserializeJson(doc, line);
   if (err) {
-    Serial.print(F("解析串口 JSON 失败: "));
-    Serial.println(err.c_str());
+    // Serial.print(F("解析串口 JSON 失败: "));
+    // Serial.println(err.c_str());
     return;
   }
 
   const char* type = doc["type"];
   if (type == nullptr) {
-    Serial.println(F("串口消息缺少 type 字段"));
+    // Serial.println(F("串口消息缺少 type 字段"));
     return;
   }
 
